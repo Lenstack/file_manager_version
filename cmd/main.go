@@ -93,7 +93,12 @@ func storeFile(filePath string, db *sql.DB) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to open source file: %w", err)
 	}
-	defer srcFile.Close()
+	defer func(srcFile *os.File) {
+		err := srcFile.Close()
+		if err != nil {
+			fmt.Printf("Failed to close source file: %v\n", err)
+		}
+	}(srcFile)
 
 	hash, err := hashFile(filePath)
 	if err != nil {
@@ -118,7 +123,12 @@ func storeFile(filePath string, db *sql.DB) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to create destination file: %w", err)
 	}
-	defer destFile.Close()
+	defer func(destFile *os.File) {
+		err := destFile.Close()
+		if err != nil {
+			fmt.Printf("Failed to close destination file: %v\n", err)
+		}
+	}(destFile)
 
 	if _, err := io.Copy(destFile, srcFile); err != nil {
 		return "", fmt.Errorf("failed to copy file: %w", err)
@@ -193,14 +203,19 @@ func hashFile(filepath string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to open file: %w", err)
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			fmt.Printf("Failed to close file: %v\n", err)
+		}
+	}(file)
 
-	hasher := sha256.New()
-	if _, err := io.Copy(hasher, file); err != nil {
+	hashed := sha256.New()
+	if _, err := io.Copy(hashed, file); err != nil {
 		return "", fmt.Errorf("failed to hash file: %w", err)
 	}
 
-	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
+	return fmt.Sprintf("%x", hashed.Sum(nil)), nil
 }
 
 // Compress a file using gzip
@@ -216,7 +231,12 @@ func compressFile(inputFile, outputDir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open input file: %w", err)
 	}
-	defer inFile.Close()
+	defer func(inFile *os.File) {
+		err := inFile.Close()
+		if err != nil {
+			fmt.Printf("Failed to close input file: %v\n", err)
+		}
+	}(inFile)
 
 	// Construct the output file path
 	outputFile := filepath.Join(outputDir, filepath.Base(inputFile)+".gz")
@@ -226,11 +246,21 @@ func compressFile(inputFile, outputDir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create output file: %w", err)
 	}
-	defer outFile.Close()
+	defer func(outFile *os.File) {
+		err := outFile.Close()
+		if err != nil {
+			fmt.Printf("Failed to close output file: %v\n", err)
+		}
+	}(outFile)
 
 	// Create a new gzip writer with metadata
 	gzipWriter := gzip.NewWriter(outFile)
-	defer gzipWriter.Close()
+	defer func(gzipWriter *gzip.Writer) {
+		err := gzipWriter.Close()
+		if err != nil {
+			fmt.Printf("Failed to close gzip writer: %v\n", err)
+		}
+	}(gzipWriter)
 	gzipWriter.Name = filepath.Base(inputFile) // Store the original file name in the header
 
 	// Copy data from the input file to the gzip writer
@@ -255,14 +285,24 @@ func decompressFile(inputFile, outputDir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open input file: %w", err)
 	}
-	defer inFile.Close()
+	defer func(inFile *os.File) {
+		err := inFile.Close()
+		if err != nil {
+			fmt.Printf("Failed to close input file: %v\n", err)
+		}
+	}(inFile)
 
 	// Create a new gzip reader
 	gzipReader, err := gzip.NewReader(inFile)
 	if err != nil {
 		return fmt.Errorf("failed to create gzip reader: %w", err)
 	}
-	defer gzipReader.Close()
+	defer func(gzipReader *gzip.Reader) {
+		err := gzipReader.Close()
+		if err != nil {
+			fmt.Printf("Failed to close gzip reader: %v\n", err)
+		}
+	}(gzipReader)
 
 	// Use the original file name from the gzip header
 	outputFile := filepath.Join(outputDir, gzipReader.Name)
@@ -275,7 +315,12 @@ func decompressFile(inputFile, outputDir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create output file: %w", err)
 	}
-	defer outFile.Close()
+	defer func(outFile *os.File) {
+		err := outFile.Close()
+		if err != nil {
+			fmt.Printf("Failed to close output file: %v\n", err)
+		}
+	}(outFile)
 
 	// Copy data from the gzip reader to the output file
 	_, err = io.Copy(outFile, gzipReader)
@@ -292,13 +337,28 @@ func backup(directory, output string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create output file: %w", err)
 	}
-	defer outFile.Close()
+	defer func(outFile *os.File) {
+		err := outFile.Close()
+		if err != nil {
+			fmt.Printf("Failed to close output file: %v\n", err)
+		}
+	}(outFile)
 
 	gzipWriter := gzip.NewWriter(outFile)
-	defer gzipWriter.Close()
+	defer func(gzipWriter *gzip.Writer) {
+		err := gzipWriter.Close()
+		if err != nil {
+			fmt.Printf("Failed to close gzip writer: %v\n", err)
+		}
+	}(gzipWriter)
 
 	tarWriter := tar.NewWriter(gzipWriter)
-	defer tarWriter.Close()
+	defer func(tarWriter *tar.Writer) {
+		err := tarWriter.Close()
+		if err != nil {
+			fmt.Printf("Failed to close tar writer: %v\n", err)
+		}
+	}(tarWriter)
 
 	err = filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -312,7 +372,12 @@ func backup(directory, output string) error {
 		if err != nil {
 			return fmt.Errorf("failed to open file %s: %w", path, err)
 		}
-		defer file.Close()
+		defer func(file *os.File) {
+			err := file.Close()
+			if err != nil {
+				fmt.Printf("Failed to close file: %v\n", err)
+			}
+		}(file)
 
 		header, err := tar.FileInfoHeader(info, info.Name())
 		if err != nil {
@@ -352,14 +417,24 @@ func restore(archive, targetDir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open archive file: %w", err)
 	}
-	defer inFile.Close()
+	defer func(inFile *os.File) {
+		err := inFile.Close()
+		if err != nil {
+			fmt.Printf("Failed to close archive file: %v\n", err)
+		}
+	}(inFile)
 
 	// Create a gzip reader
 	gzipReader, err := gzip.NewReader(inFile)
 	if err != nil {
 		return fmt.Errorf("failed to create gzip reader: %w", err)
 	}
-	defer gzipReader.Close()
+	defer func(gzipReader *gzip.Reader) {
+		err := gzipReader.Close()
+		if err != nil {
+			fmt.Printf("Failed to close gzip reader: %v\n", err)
+		}
+	}(gzipReader)
 
 	// Create a tar reader
 	tarReader := tar.NewReader(gzipReader)
@@ -394,7 +469,12 @@ func restore(archive, targetDir string) error {
 			if err != nil {
 				return fmt.Errorf("failed to create file %s: %w", targetPath, err)
 			}
-			defer outFile.Close()
+			func(outFile *os.File) {
+				err := outFile.Close()
+				if err != nil {
+					fmt.Printf("Failed to close file: %v\n", err)
+				}
+			}(outFile)
 
 			// Copy file content
 			if _, err := io.Copy(outFile, tarReader); err != nil {
@@ -418,7 +498,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			fmt.Printf("Failed to close database: %v\n", err)
+		}
+	}(db)
 
 	switch *action {
 	case "store":
