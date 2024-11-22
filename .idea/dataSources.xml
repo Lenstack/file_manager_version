@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="file_manager" uuid="764be2e8-db59-4c75-b47f-6cddaabc61ae">
+    <data-source source="LOCAL" name="file_manager" uuid="2cf88bfb-bb7c-4149-b161-6691625f9c19">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:C:\Users\asesi\Documents\Github\file_manager_version\cmd\file_manager.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:C:\Users\asesi\Documents\Github\file_manager_version\file_manager.db</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
       </jdbc-additional-properties>
